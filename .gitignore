@@ -1,0 +1,7 @@
+__pycache__/
+.venv/
+data/chroma/
+*.sqlite3
+*.pyc
+Actividad_RAG_53945291X.md
+Plantilla_Examen_NousGPT_RAG.md
