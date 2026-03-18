@@ -47,10 +47,16 @@ function getCommonPayload() {
   };
 }
 
-function setBusy(btn, busy, label) {
+function setBusy(btn, busy, label, icon = '') {
   btn.disabled = busy;
-  btn.dataset.label ||= btn.textContent;
-  btn.textContent = busy ? label : btn.dataset.label;
+  if (!btn.dataset.originalHtml) {
+    btn.dataset.originalHtml = btn.innerHTML;
+  }
+  if (busy) {
+    btn.innerHTML = icon ? `<span class="btn-icon">${icon}</span>${label}` : label;
+  } else {
+    btn.innerHTML = btn.dataset.originalHtml;
+  }
 }
 
 function escapeHtml(v) {
@@ -73,27 +79,27 @@ function md(text) {
   return h;
 }
 
-/* ───── Dark mode ───── */
-function applyDark(dark) {
-  document.body.classList.toggle('dark', dark);
-  localStorage.setItem('nous-rag-dark', dark ? '1' : '0');
+/* ───── Light/Dark mode toggle ───── */
+function applyLightMode(light) {
+  document.body.classList.toggle('light', light);
+  localStorage.setItem('shenron-theme', light ? 'light' : 'dark');
 }
-(function initDark() {
-  const stored = localStorage.getItem('nous-rag-dark');
-  const prefer = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  applyDark(stored !== null ? stored === '1' : prefer);
+(function initTheme() {
+  const stored = localStorage.getItem('shenron-theme');
+  // Dark mode is default, only apply light if explicitly set
+  applyLightMode(stored === 'light');
 })();
 el.darkModeBtn?.addEventListener('click', () => {
-  applyDark(!document.body.classList.contains('dark'));
+  applyLightMode(!document.body.classList.contains('light'));
 });
 
 /* ───── Status badges ───── */
 async function refreshStatus() {
   try {
     const d = await api(`/api/status?collection=${encodeURIComponent(el.collection.value.trim())}`);
-    el.statusBadge.textContent = `Coleccion ${d.collection} · ${d.chunks} chunks`;
+    el.statusBadge.innerHTML = `<span class="status-dot"></span><span>Colección ${d.collection} · ${d.chunks} chunks</span>`;
   } catch (e) {
-    el.statusBadge.textContent = `Estado: ${e.message}`;
+    el.statusBadge.innerHTML = `<span class="status-dot"></span><span>Estado: ${e.message}</span>`;
   }
 }
 
@@ -101,11 +107,11 @@ async function refreshOllama() {
   try {
     const d = await api('/api/ollama');
     const n = (d.models || []).length;
-    el.ollamaBadge.textContent = `Ollama OK · ${n} modelos`;
-    el.ollamaBadge.classList.add('ollama-status');
+    el.ollamaBadge.innerHTML = `<span class="status-dot"></span><span>Ollama · ${n} modelos</span>`;
+    el.ollamaBadge.classList.add('ollama');
   } catch {
-    el.ollamaBadge.textContent = 'Ollama offline';
-    el.ollamaBadge.classList.remove('ollama-status');
+    el.ollamaBadge.innerHTML = `<span class="status-dot"></span><span>Ollama offline</span>`;
+    el.ollamaBadge.classList.remove('ollama');
   }
 }
 
@@ -153,7 +159,7 @@ function renderSources(items = []) {
 /* ───── Actions ───── */
 el.trainBtn.addEventListener('click', async () => {
   try {
-    setBusy(el.trainBtn, true, 'Entrenando...');
+    setBusy(el.trainBtn, true, 'Entrenando...', '⚡');
     const d = await api('/api/train', 'POST', {
       collection: el.collection.value.trim(),
       corpus_dir: el.corpusDir.value.trim(),
@@ -175,7 +181,7 @@ el.searchBtn.addEventListener('click', async () => {
   const q = el.searchQuery.value.trim();
   if (!q) { renderSearchResults([]); return; }
   try {
-    setBusy(el.searchBtn, true, 'Buscando...');
+    setBusy(el.searchBtn, true, 'Buscando...', '🔍');
     const d = await api('/api/search', 'POST', { ...getCommonPayload(), query: q });
     renderSearchResults(d.results || []);
   } catch (e) {
@@ -189,7 +195,7 @@ el.askBtn.addEventListener('click', async () => {
   const q = el.askQuery.value.trim();
   if (!q) return;
   try {
-    setBusy(el.askBtn, true, 'Generando respuesta...');
+    setBusy(el.askBtn, true, 'Invocando al Oráculo...', '🐉');
     const d = await api('/api/ask', 'POST', {
       ...getCommonPayload(),
       query: q,
@@ -201,7 +207,7 @@ el.askBtn.addEventListener('click', async () => {
     renderSearchResults(d.results || []);
   } catch (e) {
     el.answerBox.classList.remove('hidden');
-    el.answerContent.innerHTML = `<span style="color:var(--danger)">${escapeHtml(e.message)}</span>`;
+    el.answerContent.innerHTML = `<span style="color:var(--dragon-orange)">${escapeHtml(e.message)}</span>`;
     el.answerSources.textContent = '';
   } finally {
     setBusy(el.askBtn, false);

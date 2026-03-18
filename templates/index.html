@@ -4,93 +4,143 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="ShenronGPT RAG Lab - Sistema de búsqueda semántica sobre Dragon Ball Z con ChromaDB + Ollama.">
-  <title>ShenronGPT - Oráculo Namek</title>
+  <title>🐉 ShenronGPT - Oráculo Namek</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <noscript><style>body::after{content:'Activa JavaScript para usar ShenronGPT.';display:block;padding:2rem;text-align:center;}</style></noscript>
 </head>
 <body>
+  <div class="stars"></div>
   <main class="shell">
-    <header class="header panel">
+    <!-- Header compacto -->
+    <header class="header-compact">
       <div class="header-left">
-        <h1>ShenronGPT · Oráculo Namek</h1>
-        <p>Consulta información sobre Dragon Ball Z con búsqueda semántica RAG.</p>
+        <div class="dragon-icon">🐉</div>
+        <div class="header-content">
+          <h1 class="title-glow">ShenronGPT</h1>
+          <p class="subtitle">Oráculo de Namek</p>
+        </div>
       </div>
       <div class="header-right">
-        <div class="status" id="statusBadge">Comprobando...</div>
-        <div class="status ollama-status" id="ollamaBadge">Ollama: ...</div>
-        <button id="darkModeBtn" class="icon-btn" title="Alternar modo oscuro">🌓</button>
+        <div class="status-badge" id="statusBadge">
+          <span class="status-dot"></span>
+          <span>ChromaDB</span>
+        </div>
+        <div class="status-badge ollama" id="ollamaBadge">
+          <span class="status-dot"></span>
+          <span>Ollama</span>
+        </div>
+        <button id="darkModeBtn" class="theme-toggle" title="Alternar modo oscuro">
+          <span class="sun">☀️</span>
+          <span class="moon">🌙</span>
+        </button>
       </div>
     </header>
 
-    <!-- Corpus info -->
-    <section class="panel corpus-bar" id="corpusBar">
+    <!-- Corpus info bar -->
+    <section class="corpus-info" id="corpusBar">
+      <span class="corpus-icon">📚</span>
       <strong>Corpus:</strong> <span id="corpusInfo">cargando...</span>
     </section>
 
-    <section class="grid">
-      <!-- Entrenamiento -->
-      <article class="panel card">
-        <h2>Entrenamiento</h2>
-        <label>Colección
-          <input id="collection" value="{{ default_collection }}">
-        </label>
-        <label>Ruta del corpus
-          <input id="corpusDir" value="{{ default_corpus }}">
-        </label>
-        <div class="row">
-          <label>Chunk size
-            <input id="chunkSize" type="number" value="{{ default_chunk_size }}">
-          </label>
-          <label>Overlap
-            <input id="overlap" type="number" value="{{ default_overlap }}">
-          </label>
+    <!-- Dashboard Grid -->
+    <section class="dashboard-grid">
+      <!-- Búsqueda semántica - Principal -->
+      <article class="card card-search card-large">
+        <div class="card-header">
+          <span class="card-icon">🔍</span>
+          <h2>Búsqueda Semántica</h2>
         </div>
-        <label>Modelo embedding (Ollama)
-          <input id="embedModel" value="{{ default_embed_model }}">
-        </label>
-        <label class="check">
-          <input id="resetCollection" type="checkbox" checked>
-          Reiniciar colección antes de entrenar
-        </label>
-        <button id="trainBtn">Entrenar base vectorial</button>
-        <pre id="trainResult" class="result"></pre>
+        <div class="card-body">
+          <label>
+            <span class="label-text">Consulta</span>
+            <textarea id="searchQuery" rows="3" placeholder="¿Qué es el Super Saiyajin?" class="input-field"></textarea>
+          </label>
+          <label>
+            <span class="label-text">Top K resultados</span>
+            <input id="topK" type="number" value="{{ default_top_k }}" min="1" max="20" class="input-field">
+          </label>
+          <button id="searchBtn" class="btn btn-secondary">
+            <span class="btn-icon">🎯</span>
+            Buscar Contexto
+          </button>
+          <div id="searchResults" class="results-list"></div>
+        </div>
       </article>
 
-      <!-- Búsqueda semántica -->
-      <article class="panel card">
-        <h2>Búsqueda semántica</h2>
-        <label>Consulta
-          <textarea id="searchQuery" rows="3" placeholder="Ej: transacciones ACID y rollback"></textarea>
-        </label>
-        <label>Top K
-          <input id="topK" type="number" value="{{ default_top_k }}" min="1" max="20">
-        </label>
-        <button id="searchBtn">Buscar contexto</button>
-        <div id="searchResults" class="list"></div>
+      <!-- Pregunta RAG - Principal -->
+      <article class="card card-rag card-large">
+        <div class="card-header">
+          <span class="card-icon">💬</span>
+          <h2>Pregunta al Oráculo</h2>
+        </div>
+        <div class="card-body">
+          <label>
+            <span class="label-text">Modelo de chat</span>
+            <input id="chatModel" value="{{ default_chat_model }}" class="input-field">
+          </label>
+          <label>
+            <span class="label-text">Tu pregunta</span>
+            <textarea id="askQuery" rows="4" placeholder="¿Quién derrotó a Cell y cómo lo hizo?" class="input-field"></textarea>
+          </label>
+          <button id="askBtn" class="btn btn-accent">
+            <span class="btn-icon">🐉</span>
+            Invocar al Oráculo
+          </button>
+          <article id="answerBox" class="answer-box hidden">
+            <div id="answerContent" class="answer-content"></div>
+            <div id="answerSources" class="answer-sources"></div>
+          </article>
+        </div>
       </article>
 
-      <!-- Pregunta RAG -->
-      <article class="panel card full">
-        <h2>Pregunta RAG (respuesta con fuentes)</h2>
-        <div class="row">
-          <label>Modelo chat (Ollama)
-            <input id="chatModel" value="{{ default_chat_model }}">
-          </label>
+      <!-- Entrenamiento - Sidebar derecho -->
+      <article class="card card-train card-sidebar">
+        <div class="card-header">
+          <span class="card-icon">⚡</span>
+          <h2>Entrenamiento</h2>
         </div>
-        <label>Pregunta
-          <textarea id="askQuery" rows="4" placeholder="Ej: explícamelo con ejemplo de código JDBC o PDO"></textarea>
-        </label>
-        <button id="askBtn">Responder con RAG</button>
-        <article id="answerBox" class="answer hidden">
-          <div id="answerContent" class="answer-content"></div>
-          <div id="answerSources" class="answer-sources"></div>
-        </article>
+        <div class="card-body">
+          <label>
+            <span class="label-text">Colección</span>
+            <input id="collection" value="{{ default_collection }}" class="input-field">
+          </label>
+          <label>
+            <span class="label-text">Corpus</span>
+            <input id="corpusDir" value="{{ default_corpus }}" class="input-field">
+          </label>
+          <div class="input-row">
+            <label>
+              <span class="label-text">Chunk</span>
+              <input id="chunkSize" type="number" value="{{ default_chunk_size }}" class="input-field">
+            </label>
+            <label>
+              <span class="label-text">Overlap</span>
+              <input id="overlap" type="number" value="{{ default_overlap }}" class="input-field">
+            </label>
+          </div>
+          <label>
+            <span class="label-text">Embedding</span>
+            <input id="embedModel" value="{{ default_embed_model }}" class="input-field">
+          </label>
+          <label class="checkbox-label">
+            <input id="resetCollection" type="checkbox" checked>
+            <span>Reiniciar colección</span>
+          </label>
+          <button id="trainBtn" class="btn btn-primary">
+            <span class="btn-icon">🚀</span>
+            Entrenar
+          </button>
+          <pre id="trainResult" class="result-box"></pre>
+        </div>
       </article>
     </section>
 
-    <footer class="footer">ShenronGPT - Oráculo Namek · ChromaDB + Ollama · Dragon Ball Z</footer>
+    <footer class="footer">
+      <p>ShenronGPT - Oráculo Namek</p>
+      <p class="footer-tech">ChromaDB + Ollama · Powered by Dragon Ball Z Knowledge</p>
+    </footer>
   </main>
 
   <script src="{{ url_for('static', filename='app.js') }}"></script>
